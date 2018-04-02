@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"storj.io/storj"
+	"github.com/Storj/go-libstorj/storj"
 )
 
 const version = "0.0.1"
