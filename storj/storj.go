@@ -28,10 +28,17 @@ const DefaultURL = "https://api.storj.io"
 
 // Env contains parameters for accessing the Storj network
 type Env struct {
-	URL string // TODO set DefaultURL as default value
+	URL string
 }
 
-// Info structure of the GetInfo() response
+// NewEnv creates new Env struct with default values
+func NewEnv() Env {
+	return Env{
+		URL: DefaultURL,
+	}
+}
+
+// Info struct of the GetInfo() response
 type Info struct {
 	Title       string
 	Description string
@@ -61,18 +68,23 @@ func (info *Info) UnmarshalJSON(b []byte) error {
 // GetInfo returns info about the Storj Bridge server
 func GetInfo(env Env) (Info, error) {
 	info := Info{}
+
 	resp, err := http.Get(env.URL)
 	if err != nil {
 		return info, err
 	}
-	if resp.StatusCode != 200 {
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
 		return info, fmt.Errorf("Unexpected response code: %d", resp.StatusCode)
 	}
+
 	b, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
 	if err != nil {
 		return info, err
 	}
+
 	err = json.Unmarshal(b, &info)
+
 	return info, err
 }

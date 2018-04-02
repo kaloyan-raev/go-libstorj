@@ -43,22 +43,28 @@ func main() {
 		os.Exit(0)
 	}
 
-	cmd := os.Args[1]
-
-	env := storj.Env{
-		URL: storj.DefaultURL,
+	if len(os.Args) == 1 {
+		// TODO print help
+		fmt.Fprintln(os.Stderr, "No command specified")
+		os.Exit(0)
 	}
+
+	cmd := os.Args[1]
 
 	switch cmd {
 	case "get-info":
-		info, err := storj.GetInfo(env)
+		info, err := storj.GetInfo(storj.NewEnv())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
-		} else {
-			fmt.Printf("Title: %s\nDescription: %s\nVersion: %s\nHost: %s\n",
-				info.Title, info.Description, info.Version, info.Host)
+			os.Exit(1)
 		}
+
+		fmt.Printf("Title: %s\nDescription: %s\nVersion: %s\nHost: %s\n",
+			info.Title, info.Description, info.Version, info.Host)
+
 	default:
+		// TODO print help
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
+		os.Exit(1)
 	}
 }

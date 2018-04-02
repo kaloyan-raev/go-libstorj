@@ -42,10 +42,11 @@ func mockBridge() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.Error(w, fmt.Sprintf("Cannot GET %s", r.URL.Path), 404)
-		} else {
-			fmt.Fprintf(w, `{"info":{"title":"%s","description":"%s","version":"%s"},"host":"%s"}`,
-				MockTitle, MockDescription, MockVersion, MockHost)
+			return
 		}
+
+		fmt.Fprintf(w, `{"info":{"title":"%s","description":"%s","version":"%s"},"host":"%s"}`,
+			MockTitle, MockDescription, MockVersion, MockHost)
 	})
 	go http.ListenAndServe(MockBridgeAddr, nil)
 	// TODO better way to wait for the mock server to start listening
