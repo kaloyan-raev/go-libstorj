@@ -55,7 +55,7 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 		} else {
-			fmt.Printf("title: %s\ndescription: %s\nversion: %s\nhost:%s\n",
+			fmt.Printf("title: %s\ndescription: %s\nversion: %s\nhost: %s\n",
 				info.Title, info.Description, info.Version, info.Host)
 		}
 	default:
