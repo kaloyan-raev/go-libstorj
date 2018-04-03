@@ -17,6 +17,7 @@
 package storj
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -53,33 +54,94 @@ func mockBridge() {
 	time.Sleep(1000)
 }
 
-func TestGetInfo(t *testing.T) {
-	env := Env{URL: MockBridgeURL}
-	info, err := GetInfo(env)
+var envTests = []struct {
+	env         Env
+	expectedURL string
+}{
+	{Env{}, ""},
+	{NewEnv(), DefaultURL},
+	{Env{URL: MockBridgeURL}, MockBridgeURL},
+}
 
-	if err != nil {
-		t.Errorf("Unexpected error: %s", err)
-	} else {
-		if info.Title != MockTitle {
-			t.Errorf("Title is incorrected, got: %s, want: %s", info.Title, MockTitle)
-		}
-		if info.Description != MockDescription {
-			t.Errorf("Description is incorrected, got: %s, want: %s", info.Description, MockDescription)
-		}
-		if info.Version != MockVersion {
-			t.Errorf("Version is incorrected, got: %s, want: %s", info.Version, MockVersion)
-		}
-		if info.Host != MockHost {
-			t.Errorf("Host is incorrected, got: %s, want: %s", info.Host, MockHost)
+func TestNewEnv(t *testing.T) {
+	for _, tt := range envTests {
+		if tt.env.URL != tt.expectedURL {
+			t.Errorf("URL is incorrect, got: %s, want: %s", tt.env.URL, tt.expectedURL)
 		}
 	}
 }
 
-func TestGetInfoBadPath(t *testing.T) {
-	env := Env{URL: MockBridgeURL + "/info"}
-	_, err := GetInfo(env)
+var unmarshalTests = []struct {
+	raw           string
+	expectedError bool
+}{
+	{"", true},
+	{"{", true}, // syntax error
+	{"{}", true},
+	{`{"info":{}}`, true},
+	{fmt.Sprintf(`{"info":{description":"%s","version":"%s"},"host":"%s"}`,
+		MockDescription, MockVersion, MockHost), true},
+	{fmt.Sprintf(`{"info":{"title":"%s","version":"%s"},"host":"%s"}`,
+		MockTitle, MockVersion, MockHost), true},
+	{fmt.Sprintf(`{"info":{"title":"%s","description":"%s"},"host":"%s"}`,
+		MockTitle, MockDescription, MockHost), true},
+	{fmt.Sprintf(`{"info":{"title":"%s","description":"%s","version":"%s"}}`,
+		MockTitle, MockDescription, MockVersion), true},
+	{fmt.Sprintf(`{"info":{"title":"%s","description":"%s","version":"%s"},"host":"%s"}`,
+		MockTitle, MockDescription, MockVersion, MockHost), false},
+}
 
-	if err == nil {
-		t.Error("Expected error, but call was successful")
+func TestUnmarshalJSON(t *testing.T) {
+
+	for _, tt := range unmarshalTests {
+		var info Info
+		err := json.Unmarshal([]byte(tt.raw), &info)
+
+		if err != nil {
+			if !tt.expectedError {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			continue
+		}
+
+		checkInfo(info, t)
+	}
+}
+
+var getInfoTests = []struct {
+	env           Env
+	expectedError bool
+}{
+	{Env{URL: MockBridgeURL}, false},
+	{Env{URL: MockBridgeURL + "/info"}, true},
+}
+
+func TestGetInfo(t *testing.T) {
+	for _, tt := range getInfoTests {
+		info, err := GetInfo(tt.env)
+
+		if err != nil {
+			if !tt.expectedError {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			continue
+		}
+
+		checkInfo(info, t)
+	}
+}
+
+func checkInfo(info Info, t *testing.T) {
+	if info.Title != MockTitle {
+		t.Errorf("Title is incorrect, got: %s, want: %s", info.Title, MockTitle)
+	}
+	if info.Description != MockDescription {
+		t.Errorf("Description is incorrect, got: %s, want: %s", info.Description, MockDescription)
+	}
+	if info.Version != MockVersion {
+		t.Errorf("Version is incorrect, got: %s, want: %s", info.Version, MockVersion)
+	}
+	if info.Host != MockHost {
+		t.Errorf("Host is incorrect, got: %s, want: %s", info.Host, MockHost)
 	}
 }
