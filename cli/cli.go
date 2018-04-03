@@ -17,54 +17,46 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/Storj/go-libstorj/storj"
+	"github.com/urfave/cli"
 )
 
-const version = "0.0.1"
-
 func main() {
-	// TODO support long flag names, i.e. --help, --version, etc.
-	h := flag.Bool("h", false, "output usage information")
-	v := flag.Bool("v", false, "output the version number")
+	app := cli.NewApp()
+	app.Name = "storj"
+	app.Version = "0.0.1"
+	app.Usage = "command line interface to the Storj network"
 
-	flag.Parse()
-
-	if *h {
-		// TODO print help
-		os.Exit(0)
+	app.Commands = []cli.Command{
+		{
+			Name:      "get-info",
+			Usage:     "prints bridge api information",
+			ArgsUsage: " ", // no args
+			Category:  "bridge api information",
+			Action: func(c *cli.Context) error {
+				getInfo()
+				return nil
+			},
+		},
 	}
 
-	if *v {
-		fmt.Printf("libstorj cli %s\n", version)
-		os.Exit(0)
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
 	}
+}
 
-	if len(os.Args) == 1 {
-		// TODO print help
-		fmt.Fprintln(os.Stderr, "No command specified")
-		os.Exit(0)
-	}
-
-	cmd := os.Args[1]
-
-	switch cmd {
-	case "get-info":
-		info, err := storj.GetInfo(storj.NewEnv())
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("Title: %s\nDescription: %s\nVersion: %s\nHost: %s\n",
-			info.Title, info.Description, info.Version, info.Host)
-
-	default:
-		// TODO print help
-		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
+func getInfo() {
+	info, err := storj.GetInfo(storj.NewEnv())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
+
+	fmt.Printf("Title: %s\nDescription: %s\nVersion: %s\nHost: %s\n",
+		info.Title, info.Description, info.Version, info.Host)
 }
