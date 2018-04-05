@@ -25,21 +25,6 @@ import (
 	"net/http"
 )
 
-// DefaultURL of the Storj Bridge API endpoint
-const DefaultURL = "https://api.storj.io"
-
-// Env contains parameters for accessing the Storj network
-type Env struct {
-	URL string
-}
-
-// NewEnv creates new Env struct with default values
-func NewEnv() Env {
-	return Env{
-		URL: DefaultURL,
-	}
-}
-
 // Info struct of the GetInfo() response
 type Info struct {
 	Title       string

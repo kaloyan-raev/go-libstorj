@@ -52,24 +52,7 @@ func mockBridge() {
 	})
 	go http.ListenAndServe(MockBridgeAddr, nil)
 	// TODO better way to wait for the mock server to start listening
-	time.Sleep(1000)
-}
-
-var envTests = []struct {
-	env         Env
-	expectedURL string
-}{
-	{Env{}, ""},
-	{NewEnv(), DefaultURL},
-	{Env{URL: MockBridgeURL}, MockBridgeURL},
-}
-
-func TestNewEnv(t *testing.T) {
-	for _, tt := range envTests {
-		if tt.env.URL != tt.expectedURL {
-			t.Errorf("URL is incorrect, got: %s, want: %s", tt.env.URL, tt.expectedURL)
-		}
-	}
+	time.Sleep(1 * time.Second)
 }
 
 var unmarshalTests = []struct {
