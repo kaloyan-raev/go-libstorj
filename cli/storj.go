@@ -62,14 +62,18 @@ func main() {
 }
 
 func getInfo() {
-	info, err := storj.GetInfo(storj.NewEnv())
+	env := storj.NewEnv()
+	info, err := storj.GetInfo(env)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Title: %s\nDescription: %s\nVersion: %s\nHost: %s\n",
-		info.Title, info.Description, info.Version, info.Host)
+	fmt.Printf("Storj bridge: %s\n\n", env.URL)
+	fmt.Printf("Title:       %s\n", info.Title)
+	fmt.Printf("Description: %s\n", info.Description)
+	fmt.Printf("Version:     %s\n", info.Version)
+	fmt.Printf("Host:        %s\n", info.Host)
 }
 
 func listBuckets() {
