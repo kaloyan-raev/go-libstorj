@@ -86,8 +86,9 @@ func TestUnmarshalJSON(t *testing.T) {
 		if tt.expectedError {
 			assert.NotNil(t, err, "expected error, but was successful")
 		} else {
-			assert.Nil(t, err)
-			checkInfo(info, t)
+			if assert.Nil(t, err) {
+				checkInfo(info, t)
+			}
 		}
 	}
 }
@@ -107,8 +108,9 @@ func TestGetInfo(t *testing.T) {
 		if tt.expectedError {
 			assert.NotNil(t, err, "expected error, but was successful")
 		} else {
-			assert.Nil(t, err)
-			checkInfo(info, t)
+			if assert.Nil(t, err) {
+				checkInfo(info, t)
+			}
 		}
 	}
 }
