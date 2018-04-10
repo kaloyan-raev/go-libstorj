@@ -40,36 +40,29 @@ func GetBuckets(env Env) ([]Bucket, error) {
 	if err != nil {
 		return []Bucket{}, err
 	}
-
 	req.SetBasicAuth(env.User, env.Password)
 	resp, err := client.Do(req)
 	if err != nil {
 		return []Bucket{}, err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		return []Bucket{}, fmt.Errorf("Unexpected response code: %d", resp.StatusCode)
 	}
-
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return []Bucket{}, err
 	}
-
 	var buckets []Bucket
 	err = json.Unmarshal(b, &buckets)
-
 	for i, b := range buckets {
 		decryptedName, err := decryptBucketName(b.Name, env.Mnemonic)
 		if err != nil {
 			log.Printf("Could not decrypt bucket name %s: %s\n", b.Name, err)
 			continue
 		}
-
 		buckets[i].Name = decryptedName
 		buckets[i].Decrypted = true
 	}
-
 	return buckets, err
 }

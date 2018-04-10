@@ -26,7 +26,7 @@ var envTests = []struct {
 }{
 	{Env{}, ""},
 	{NewEnv(), DefaultURL},
-	{Env{URL: MockBridgeURL}, MockBridgeURL},
+	{Env{URL: mockBridgeURL}, mockBridgeURL},
 }
 
 func TestNewEnv(t *testing.T) {

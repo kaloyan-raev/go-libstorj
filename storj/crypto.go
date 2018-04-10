@@ -25,12 +25,17 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	bip39 "github.com/tyler-smith/go-bip39"
 )
 
-const bucketNameMagic = "398734aab3c4c30c9f22590e83a95f7e43556a45fc2b3060e0c39fde31f50272"
+const (
+	bucketNameMagic = "398734aab3c4c30c9f22590e83a95f7e43556a45fc2b3060e0c39fde31f50272"
+	gcmDigestSize   = 16
+	ivSize          = 32
+)
 
 var bucketMetaMagic = []byte{66, 150, 71, 16, 50, 114, 88, 160, 163, 35, 154, 65, 162, 213, 226, 215, 70, 138, 57, 61, 52, 19, 210, 170, 38, 164, 162, 200, 86, 201, 2, 81}
 
@@ -54,13 +59,11 @@ func getDeterministicKey(key, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	hasher := sha512.New()
 	hasher.Write(sha512InputHex)
 	if err != nil {
 		return "", err
 	}
-
 	sha512Str := hex.EncodeToString(hasher.Sum(nil))
 	return sha512Str[0 : len(sha512Str)/2], nil
 }
@@ -78,20 +81,20 @@ func decryptMeta(encryptedName string, key []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-
+	if len(nameBase64) <= gcmDigestSize+ivSize {
+		return []byte{}, errors.New("Invalid encrypted name")
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return []byte{}, err
 	}
-
-	aesgcm, err := cipher.NewGCMWithNonceSize(block, 32)
+	aesgcm, err := cipher.NewGCMWithNonceSize(block, ivSize)
 	if err != nil {
 		return []byte{}, err
 	}
-
-	digest := nameBase64[:16]
-	iv := nameBase64[16:48]
-	cipherText := nameBase64[48:]
+	digest := nameBase64[:gcmDigestSize]
+	iv := nameBase64[gcmDigestSize : gcmDigestSize+ivSize]
+	cipherText := nameBase64[gcmDigestSize+ivSize:]
 	return aesgcm.Open(nil, iv, append(cipherText, digest...), nil)
 }
 
@@ -100,24 +103,20 @@ func decryptBucketName(name, mnemonic string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	bucketKeyHex, err := hex.DecodeString(bucketKey)
 	if err != nil {
 		return "", err
 	}
-
 	sig := hmac.New(sha512.New, bucketKeyHex)
 	_, err = sig.Write(bucketMetaMagic)
 	if err != nil {
 		return "", err
 	}
-
 	hmacSHA512 := sig.Sum(nil)
 	key := hmacSHA512[0 : len(hmacSHA512)/2]
 	decryptedName, err := decryptMeta(name, key)
 	if err != nil {
 		return "", err
 	}
-
 	return string(decryptedName), nil
 }

@@ -20,104 +20,91 @@ package storj
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	MockBridgeAddr  = "localhost:8091"
-	MockBridgeURL   = "http://" + MockBridgeAddr
-	MockTitle       = "Storj Bridge"
-	MockDescription = "Some description"
-	MockVersion     = "1.2.3"
-	MockHost        = "1.2.3.4"
-)
-
-func TestMain(m *testing.M) {
-	mockBridge()
-	os.Exit(m.Run())
-}
-
-func mockBridge() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.Error(w, fmt.Sprintf("Cannot GET %s", r.URL.Path), 404)
-			return
-		}
-
-		fmt.Fprintf(w, `{"info":{"title":"%s","description":"%s","version":"%s"},"host":"%s"}`,
-			MockTitle, MockDescription, MockVersion, MockHost)
-	})
-	go http.ListenAndServe(MockBridgeAddr, nil)
-	// TODO better way to wait for the mock server to start listening
-	time.Sleep(1 * time.Second)
-}
-
 var unmarshalTests = []struct {
-	raw           string
-	expectedError bool
+	raw       string
+	errString string
 }{
-	{"", true},
-	{"{", true}, // syntax error
-	{"{}", true},
-	{`{"info":{}}`, true},
+	{"", "some error"},
+	{"{", "some error"}, // syntax error
+	{"{}", "some error"},
+	{`{"info":{}}`, "some error"},
 	{fmt.Sprintf(`{"info":{description":"%s","version":"%s"},"host":"%s"}`,
-		MockDescription, MockVersion, MockHost), true},
+		mockDescription, mockVersion, mockHost), "some error"},
 	{fmt.Sprintf(`{"info":{"title":"%s","version":"%s"},"host":"%s"}`,
-		MockTitle, MockVersion, MockHost), true},
+		mockTitle, mockVersion, mockHost), "some error"},
 	{fmt.Sprintf(`{"info":{"title":"%s","description":"%s"},"host":"%s"}`,
-		MockTitle, MockDescription, MockHost), true},
+		mockTitle, mockDescription, mockHost), "some error"},
 	{fmt.Sprintf(`{"info":{"title":"%s","description":"%s","version":"%s"}}`,
-		MockTitle, MockDescription, MockVersion), true},
+		mockTitle, mockDescription, mockVersion), "some error"},
 	{fmt.Sprintf(`{"info":{"title":"%s","description":"%s","version":"%s"},"host":"%s"}`,
-		MockTitle, MockDescription, MockVersion, MockHost), false},
+		mockTitle, mockDescription, mockVersion, mockHost), ""},
 }
 
 func TestUnmarshalJSON(t *testing.T) {
-
-	for _, tt := range unmarshalTests {
+	for i, example := range []struct {
+		raw       string
+		errString string
+	}{
+		{"", "unexpected end of JSON input"},
+		{"{", "unexpected end of JSON input"},
+		{"{}", "Missing info element in JSON response"},
+		{`{"info":{}}`, "Missing title element in JSON response"},
+		{fmt.Sprintf(`{"info":{"description":"%s","version":"%s"},"host":"%s"}`,
+			mockDescription, mockVersion, mockHost),
+			"Missing title element in JSON response"},
+		{fmt.Sprintf(`{"info":{"title":"%s","version":"%s"},"host":"%s"}`,
+			mockTitle, mockVersion, mockHost),
+			"Missing description element in JSON response"},
+		{fmt.Sprintf(`{"info":{"title":"%s","description":"%s"},"host":"%s"}`,
+			mockTitle, mockDescription, mockHost),
+			"Missing version element in JSON response"},
+		{fmt.Sprintf(`{"info":{"title":"%s","description":"%s","version":"%s"}}`,
+			mockTitle, mockDescription, mockVersion),
+			"Missing host element in JSON response"},
+		{fmt.Sprintf(`{"info":{"title":"%s","description":"%s","version":"%s"},"host":"%s"}`,
+			mockTitle, mockDescription, mockVersion, mockHost), ""},
+	} {
 		var info Info
-		err := json.Unmarshal([]byte(tt.raw), &info)
-
-		if tt.expectedError {
-			assert.NotNil(t, err, "expected error, but was successful")
-		} else {
-			if assert.Nil(t, err) {
-				checkInfo(info, t)
-			}
+		err := json.Unmarshal([]byte(example.raw), &info)
+		errTag := fmt.Sprintf("Test case #%d", i)
+		if example.errString != "" {
+			assert.EqualError(t, err, example.errString, errTag)
+			continue
+		}
+		if assert.NoError(t, err, errTag) {
+			checkInfo(info, t, errTag)
 		}
 	}
-}
-
-var getInfoTests = []struct {
-	env           Env
-	expectedError bool
-}{
-	{Env{URL: MockBridgeURL}, false},
-	{Env{URL: MockBridgeURL + "/info"}, true},
 }
 
 func TestGetInfo(t *testing.T) {
-	for _, tt := range getInfoTests {
-		info, err := GetInfo(tt.env)
-
-		if tt.expectedError {
-			assert.NotNil(t, err, "expected error, but was successful")
-		} else {
-			if assert.Nil(t, err) {
-				checkInfo(info, t)
-			}
+	for i, example := range []struct {
+		env       Env
+		errString string
+	}{
+		{NewMockNoAuthEnv(), ""},
+		{Env{URL: mockBridgeURL + "/info"}, "Unexpected response code: 404"},
+	} {
+		info, err := GetInfo(example.env)
+		errTag := fmt.Sprintf("Test case #%d", i)
+		if example.errString != "" {
+			assert.EqualError(t, err, example.errString, errTag)
+			continue
+		}
+		if assert.NoError(t, err, errTag) {
+			checkInfo(info, t, errTag)
 		}
 	}
 }
 
-func checkInfo(info Info, t *testing.T) {
-	assert.Equal(t, MockTitle, info.Title)
-	assert.Equal(t, MockDescription, info.Description)
-	assert.Equal(t, MockVersion, info.Version)
-	assert.Equal(t, MockHost, info.Host)
+func checkInfo(info Info, t *testing.T, errTag string) {
+	assert.Equal(t, mockTitle, info.Title, errTag)
+	assert.Equal(t, mockDescription, info.Description, errTag)
+	assert.Equal(t, mockVersion, info.Version, errTag)
+	assert.Equal(t, mockHost, info.Host, errTag)
 }

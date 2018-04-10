@@ -68,7 +68,6 @@ func getInfo() {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
-
 	fmt.Printf("Storj bridge: %s\n\n", env.URL)
 	fmt.Printf("Title:       %s\n", info.Title)
 	fmt.Printf("Description: %s\n", info.Description)
@@ -82,7 +81,6 @@ func listBuckets() {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
-
 	for _, b := range buckets {
 		fmt.Printf("ID: %s\tDecrypted: %t\t\tCreated: %s\tName: %s\n",
 			b.ID, b.Decrypted, b.Created, b.Name)
