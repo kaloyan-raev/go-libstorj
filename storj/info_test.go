@@ -24,6 +24,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -81,14 +83,12 @@ func TestUnmarshalJSON(t *testing.T) {
 		var info Info
 		err := json.Unmarshal([]byte(tt.raw), &info)
 
-		if err != nil {
-			if !tt.expectedError {
-				t.Errorf("Unexpected error: %s", err)
-			}
-			continue
+		if tt.expectedError {
+			assert.NotNil(t, err, "expected error, but was successful")
+		} else {
+			assert.Nil(t, err)
+			checkInfo(info, t)
 		}
-
-		checkInfo(info, t)
 	}
 }
 
@@ -104,28 +104,18 @@ func TestGetInfo(t *testing.T) {
 	for _, tt := range getInfoTests {
 		info, err := GetInfo(tt.env)
 
-		if err != nil {
-			if !tt.expectedError {
-				t.Errorf("Unexpected error: %s", err)
-			}
-			continue
+		if tt.expectedError {
+			assert.NotNil(t, err, "expected error, but was successful")
+		} else {
+			assert.Nil(t, err)
+			checkInfo(info, t)
 		}
-
-		checkInfo(info, t)
 	}
 }
 
 func checkInfo(info Info, t *testing.T) {
-	if info.Title != MockTitle {
-		t.Errorf("Title is incorrect, got: %s, want: %s", info.Title, MockTitle)
-	}
-	if info.Description != MockDescription {
-		t.Errorf("Description is incorrect, got: %s, want: %s", info.Description, MockDescription)
-	}
-	if info.Version != MockVersion {
-		t.Errorf("Version is incorrect, got: %s, want: %s", info.Version, MockVersion)
-	}
-	if info.Host != MockHost {
-		t.Errorf("Host is incorrect, got: %s, want: %s", info.Host, MockHost)
-	}
+	assert.Equal(t, MockTitle, info.Title)
+	assert.Equal(t, MockDescription, info.Description)
+	assert.Equal(t, MockVersion, info.Version)
+	assert.Equal(t, MockHost, info.Host)
 }
