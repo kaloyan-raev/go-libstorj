@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -62,7 +63,7 @@ func GetBuckets(env Env) ([]Bucket, error) {
 	for i, b := range buckets {
 		decryptedName, err := decryptBucketName(b.Name, env.Mnemonic)
 		if err != nil {
-			// TODO log error
+			log.Printf("Could not decrypt bucket name %s: %s\n", b.Name, err)
 			continue
 		}
 
