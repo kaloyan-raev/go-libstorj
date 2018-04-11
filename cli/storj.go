@@ -43,6 +43,16 @@ func main() {
 				return nil
 			},
 		},
+		{
+			Name:      "list-buckets",
+			Usage:     "lists the available buckets",
+			ArgsUsage: " ", // no args
+			Category:  "working with buckets and files",
+			Action: func(c *cli.Context) error {
+				listBuckets()
+				return nil
+			},
+		},
 	}
 
 	err := app.Run(os.Args)
@@ -52,12 +62,27 @@ func main() {
 }
 
 func getInfo() {
-	info, err := storj.GetInfo(storj.NewEnv())
+	env := storj.NewEnv()
+	info, err := storj.GetInfo(env)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
+	fmt.Printf("Storj bridge: %s\n\n", env.URL)
+	fmt.Printf("Title:       %s\n", info.Title)
+	fmt.Printf("Description: %s\n", info.Description)
+	fmt.Printf("Version:     %s\n", info.Version)
+	fmt.Printf("Host:        %s\n", info.Host)
+}
 
-	fmt.Printf("Title: %s\nDescription: %s\nVersion: %s\nHost: %s\n",
-		info.Title, info.Description, info.Version, info.Host)
+func listBuckets() {
+	buckets, err := storj.GetBuckets(storj.NewEnv())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+	for _, b := range buckets {
+		fmt.Printf("ID: %s\tDecrypted: %t\t\tCreated: %s\tName: %s\n",
+			b.ID, b.Decrypted, b.Created, b.Name)
+	}
 }

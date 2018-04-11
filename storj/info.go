@@ -37,62 +37,50 @@ type Info struct {
 func (info *Info) UnmarshalJSON(b []byte) error {
 	var f interface{}
 	json.Unmarshal(b, &f)
-
 	m := f.(map[string]interface{})
-
 	v, ok := m["info"]
 	if !ok {
 		return errors.New("Missing info element in JSON response")
 	}
 	i := v.(map[string]interface{})
-
 	v, ok = i["title"]
 	if !ok {
 		return errors.New("Missing title element in JSON response")
 	}
 	info.Title = v.(string)
-
 	v, ok = i["description"]
 	if !ok {
 		return errors.New("Missing description element in JSON response")
 	}
 	info.Description = v.(string)
-
 	v, ok = i["version"]
 	if !ok {
 		return errors.New("Missing version element in JSON response")
 	}
 	info.Version = v.(string)
-
 	v, ok = m["host"]
 	if !ok {
 		return errors.New("Missing host element in JSON response")
 	}
 	info.Host = v.(string)
-
 	return nil
 }
 
 // GetInfo returns info about the Storj Bridge server
 func GetInfo(env Env) (Info, error) {
 	info := Info{}
-
 	resp, err := http.Get(env.URL)
 	if err != nil {
 		return info, err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		return info, fmt.Errorf("Unexpected response code: %d", resp.StatusCode)
 	}
-
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return info, err
 	}
-
 	err = json.Unmarshal(b, &info)
-
 	return info, err
 }

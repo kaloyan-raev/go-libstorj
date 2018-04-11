@@ -18,6 +18,7 @@
 package storj
 
 import "testing"
+import "github.com/stretchr/testify/assert"
 
 var envTests = []struct {
 	env         Env
@@ -25,13 +26,11 @@ var envTests = []struct {
 }{
 	{Env{}, ""},
 	{NewEnv(), DefaultURL},
-	{Env{URL: MockBridgeURL}, MockBridgeURL},
+	{Env{URL: mockBridgeURL}, mockBridgeURL},
 }
 
 func TestNewEnv(t *testing.T) {
 	for _, tt := range envTests {
-		if tt.env.URL != tt.expectedURL {
-			t.Errorf("URL is incorrect, got: %s, want: %s", tt.env.URL, tt.expectedURL)
-		}
+		assert.Equal(t, tt.expectedURL, tt.env.URL)
 	}
 }
